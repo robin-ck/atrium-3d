@@ -90,6 +90,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function () {
   "use strict";
@@ -104,6 +105,7 @@
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true;
+  renderer.localClippingEnabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
   host.appendChild(renderer.domElement);
 
@@ -528,12 +530,56 @@
       const [x0, x1] = z.x, [z0, z1] = z.z;
       const hue = (i * 47) % 360;
       const col = new T.Color(`hsl(${hue}, 60%, 50%)`);
-      const y = z.id === "skylight" ? H - 0.3 : z.id === "mezzanine-railing" ? SLAB_Y + 1.9 : z.id === "stair-void" ? 0.02 : 0.03;
+      const y = typeof z.y === "number" ? z.y : z.id === "skylight" ? H - 0.3 : z.id === "mezzanine-railing" ? SLAB_Y + 1.9 : z.id === "stair-void" ? 0.02 : 0.03;
       const plane = new T.Mesh(new T.PlaneGeometry(x1 - x0, z1 - z0), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, depthWrite: false, side: T.DoubleSide }));
       plane.rotation.x = -Math.PI / 2; plane.position.set((x0 + x1) / 2, y, (z0 + z1) / 2); zonesRoot.add(plane);
       const edge = new T.LineSegments(new T.EdgesGeometry(new T.PlaneGeometry(x1 - x0, z1 - z0)), new T.LineBasicMaterial({ color: col }));
       edge.rotation.x = -Math.PI / 2; edge.position.copy(plane.position); zonesRoot.add(edge);
       const lab = labelSprite(z.id); lab.position.set((x0 + x1) / 2, y + 0.6, (z0 + z1) / 2); zonesRoot.add(lab);
+    });
+  }
+
+  // ---------- scanned room base ----------
+  const scanClip = new T.Plane(new T.Vector3(0, -1, 0), 1e6);
+  let scanClipHeight = 1e6;
+  function loadScanBase(base) {
+    shell.visible = false;
+    scene.fog = null;
+    const v3 = (a, d) => new T.Vector3(...(Array.isArray(a) ? a : d));
+    if (base.orbitStart) { ORBIT_START.pos.copy(v3(base.orbitStart.position)); ORBIT_START.target.copy(v3(base.orbitStart.target)); }
+    if (base.walkStart) { WALK_START.pos.copy(v3(base.walkStart.position)); WALK_START.yaw = deg(base.walkStart.yaw); WALK_START.pitch = 0; }
+    if (base.walkBounds) walkBounds = base.walkBounds;
+    if (base.clipHeight) scanClipHeight = base.clipHeight;
+    controls.maxDistance = 25;
+    setMode(mode);
+    return new Promise((resolve) => {
+      const onLoad = (gltf) => {
+        const root = gltf.scene;
+        root.scale.setScalar(base.scale || 1);
+        root.position.copy(v3(base.offset, [0, 0, 0]));
+        root.rotation.y = deg(base.rotation);
+        root.traverse((o) => { if (o.isMesh) { o.material.clippingPlanes = [scanClip]; o.material.side = T.FrontSide; } });
+        scene.add(root);
+        window.atrium.base = root;
+        resolve();
+      };
+      const onError = () => {
+        document.getElementById("error-text").textContent = `The room scan (${base.model}) could not be loaded. Plants and furniture are still shown.`;
+        document.getElementById("error").hidden = false;
+        resolve();
+      };
+      const loader = new T.GLTFLoader();
+      if (/\.txt$/i.test(base.model)) {
+        // artifacts cannot serve .glb files, so the model is published as base64 text and decoded here
+        fetch(base.model).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+          .then((txt) => {
+            const bin = atob(txt.trim()), bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            loader.parse(bytes.buffer, "", onLoad, onError);
+          }).catch(onError);
+      } else {
+        loader.load(base.model, onLoad, undefined, onError);
+      }
     });
   }
 
@@ -546,6 +592,7 @@
     mode = m;
     btnOrbit.setAttribute("aria-pressed", m === "orbit"); btnWalk.setAttribute("aria-pressed", m === "walk");
     controls.enabled = m === "orbit";
+    scanClip.constant = m === "orbit" ? scanClipHeight : 1e6; // cut the ceiling off only when looking in from outside
     if (m === "walk") {
       camera.position.copy(WALK_START.pos); walk.yaw = WALK_START.yaw; walk.pitch = WALK_START.pitch;
       hint.innerHTML = "<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to walk · drag to look · <kbd>Shift</kbd> faster · <kbd>Esc</kbd> back to orbit";
@@ -576,7 +623,9 @@
   });
   el.addEventListener("pointerup", () => { walk.dragging = false; });
 
+  let walkBounds = null; // set for scanned rooms: { x: [min, max], z: [min, max] }
   function blocked(x, z) {
+    if (walkBounds) return x < walkBounds.x[0] || x > walkBounds.x[1] || z < walkBounds.z[0] || z > walkBounds.z[1];
     if (x < X0 + 0.4 || x > X1 - 0.4 || z < GLASS_Z + 0.35 || z > Z1 - 0.3) return true;
     if (x < VOID.x1 + 0.3 && z > VOID.z0 - 0.3 && z < VOID.z1 + 0.3) return true; // stair void
     return false;
@@ -615,7 +664,12 @@
   // ---------- load scene.json ----------
   fetch("scene.json", { cache: "no-store" })
     .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-    .then((data) => { buildObjects(data); buildZones(data); window.atrium.data = data; window.atrium.ready = true; })
+    .then((data) => {
+      const baseReady = data.base && data.base.type === "scan" ? loadScanBase(data.base) : Promise.resolve();
+      if (data.meta && data.meta.name) document.querySelector("h1").textContent = data.meta.name;
+      buildObjects(data); buildZones(data); window.atrium.data = data;
+      return baseReady.then(() => { window.atrium.ready = true; });
+    })
     .catch((e) => {
       document.getElementById("error-text").textContent = "The scene file (scene.json) could not be loaded: " + e.message + ". The building shell is shown without furniture or plants.";
       document.getElementById("error").hidden = false;
