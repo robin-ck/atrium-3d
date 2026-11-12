@@ -36,6 +36,8 @@
     { "id": "island-curved", "type": "kitchen-island", "position": [5.8, 0, 1.4], "rotation": -12, "size": [3.0, 1.05, 1.1] },
     { "id": "back-counter", "type": "counter", "position": [7.4, 0, -3.6], "rotation": -12, "size": [3.2, 1.0, 0.8] },
     { "id": "coffee-machine", "type": "coffee-machine", "position": [4.6, 1.05, -2.2], "rotation": -12 },
+    { "id": "stair-coffee-counter", "type": "counter", "position": [-12.6, 0, -5.6], "rotation": 0, "size": [1.4, 1.0, 0.6] },
+    { "id": "stair-coffee-machine", "type": "coffee-machine", "position": [-12.6, 1.04, -5.65], "rotation": 0 },
     { "id": "stool-1", "type": "bar-stool", "position": [2.4, 0, -0.5] },
     { "id": "stool-2", "type": "bar-stool", "position": [3.4, 0, -0.7] },
     { "id": "stool-3", "type": "bar-stool", "position": [3.0, 0, 0.6] },
