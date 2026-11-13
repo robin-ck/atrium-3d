@@ -251,15 +251,20 @@
 
   // glazed meeting rooms under the mezzanine
   const GLASS_Z = -7.3;
-  const front = new T.Mesh(new T.BoxGeometry(X1 - X0 - 0.4, SLAB_Y, 0.03), M.glass);
-  front.position.set((X0 + X1) / 2, SLAB_Y / 2, GLASS_Z); shell.add(front);
+  const glassPanes = []; // separate panes so a doorway object can open one up
+  for (let x = X0 + 0.4; x < X1 - 0.01; x += 2.2) {
+    const w = Math.min(2.2, X1 - x);
+    const pane = new T.Mesh(new T.BoxGeometry(w, SLAB_Y, 0.03), M.glass);
+    pane.position.set(x + w / 2, SLAB_Y / 2, GLASS_Z); shell.add(pane);
+    glassPanes.push({ mesh: pane, x0: x, x1: x + w });
+  }
   for (let x = X0 + 0.4; x < X1; x += 2.2) shell.add(box(0.06, SLAB_Y, 0.08, M.black, x, SLAB_Y / 2, GLASS_Z));
   shell.add(box(X1 - X0, 0.08, 0.1, M.black, (X0 + X1) / 2, SLAB_Y - 0.04, GLASS_Z));
   // frosted blinds, dark wall panels and partition walls between rooms
   [[-12.6, 1.6], [-4.6, 3.6], [4.8, 3.0]].forEach(([x, w]) => {
     const b = new T.Mesh(new T.PlaneGeometry(w, 1.6), M.frosted); b.position.set(x, 1.35, GLASS_Z - 0.05); shell.add(b);
   });
-  [[-9.1, 1.8], [-1.4, 1.4], [8.4, 1.6]].forEach(([x, w]) => shell.add(box(w, SLAB_Y, 0.1, M.black, x, SLAB_Y / 2, GLASS_Z - 0.06)));
+  [[-10.6, 1.2], [-1.4, 1.4], [8.4, 1.6]].forEach(([x, w]) => shell.add(box(w, SLAB_Y, 0.1, M.black, x, SLAB_Y / 2, GLASS_Z - 0.06)));
   for (let x = -10; x <= 10; x += 5) shell.add(box(0.12, SLAB_Y, Math.abs(Z0 - GLASS_Z), M.white, x, SLAB_Y / 2, (Z0 + GLASS_Z) / 2));
   // a few desks inside the rooms
   [[-12.6, -9.5], [-4.6, -9.8], [4.8, -9.6], [10.4, -9.6]].forEach(([x, z]) => shell.add(box(1.6, 0.74, 0.8, M.white, x, 0.37, z)));
@@ -270,10 +275,18 @@
   const roofGlass = new T.Mesh(new T.PlaneGeometry(SKY.x1 - SKY.x0, SKY.z1 - SKY.z0), M.glass);
   roofGlass.rotation.x = -Math.PI / 2; roofGlass.position.set((SKY.x0 + SKY.x1) / 2, 0, (SKY.z0 + SKY.z1) / 2);
   roof.add(roofGlass);
-  for (let z = SKY.z0; z <= SKY.z1 + 0.01; z += 1.75) roof.add(box(SKY.x1 - SKY.x0, 0.22, 0.14, M.white, (SKY.x0 + SKY.x1) / 2, -0.11, z, false));
-  for (let x = SKY.x0; x <= SKY.x1 + 0.01; x += 5) roof.add(box(0.2, 0.5, SKY.z1 - SKY.z0, M.white, x, -0.25, (SKY.z0 + SKY.z1) / 2, false));
+  for (let z = SKY.z0; z <= SKY.z1 + 0.01; z += 1.75) roof.add(box(SKY.x1 - SKY.x0, 0.22, 0.14, M.white, (SKY.x0 + SKY.x1) / 2, -0.11, z));
+  for (let x = SKY.x0; x <= SKY.x1 + 0.01; x += 5) roof.add(box(0.2, 0.5, SKY.z1 - SKY.z0, M.white, x, -0.25, (SKY.z0 + SKY.z1) / 2));
   const ceilDown = (x0, x1, z0, z1) => shell.add(inwardPlane(x1 - x0, z1 - z0, M.whiteIn, new T.Vector3((x0 + x1) / 2, H, (z0 + z1) / 2), 0, Math.PI / 2));
   ceilDown(X0, X1, Z0, SKY.z0); ceilDown(SKY.x1, X1, SKY.z0, Z1); ceilDown(X0, SKY.x0, SKY.z0, Z1);
+  M.whiteIn.shadowSide = T.DoubleSide;
+  shell.children.forEach((o) => { if (o.isMesh && o.material === M.whiteIn && o.position.y > H - 0.1) o.castShadow = true; });
+  // downlights under the mezzanine and warm fill light in the meeting rooms
+  const downMat = new T.MeshStandardMaterial({ color: "#ffffff", emissive: "#fff3dd", emissiveIntensity: 1 });
+  for (let x = X0 + 1.2; x < X1; x += 2.4) [-11, -8.8, -6.9].forEach((z) => {
+    const d = new T.Mesh(new T.CircleGeometry(0.09, 16), downMat); d.rotation.x = Math.PI / 2; d.position.set(x, SLAB_Y - 0.005, z); shell.add(d);
+  });
+  [-10, 0, 9].forEach((x) => { const pl = new T.PointLight("#ffe6c4", 0.3, 9, 2); pl.position.set(x, SLAB_Y - 0.3, -8.5); shell.add(pl); });
   // underside of mezzanine (ceiling of ground floor)
   shell.traverse((o) => { if (o.isMesh && o.material === M.glass) { o.castShadow = false; o.receiveShadow = false; } });
 
@@ -304,6 +317,44 @@
     grass: (rx, ry) => canvasTex(256, (ctx, n) => { ctx.fillStyle = "#6f8f4e"; ctx.fillRect(0, 0, n, n); speckle(ctx, 8000, n, ["#5f7f42", "#7d9c58", "#668849", "#86a35f"], 3); }, rx, ry),
   };
   const fabricMat = new T.MeshStandardMaterial({ map: TEX.fabric(4, 1), roughness: 1 });
+  TEX.wood = (rx, ry) => canvasTex(256, (ctx, n) => {
+    ctx.fillStyle = "#c99a5c"; ctx.fillRect(0, 0, n, n);
+    for (let y = 0; y < n; y += 2) { ctx.fillStyle = `rgba(${120 + Math.random() * 40},${80 + Math.random() * 25},${40 + Math.random() * 20},${0.08 + Math.random() * 0.12})`; ctx.fillRect(0, y + Math.sin(y * 0.05) * 2, n, 1 + Math.random() * 2); }
+  }, rx, ry);
+  TEX.concrete = (rx, ry) => canvasTex(256, (ctx, n) => {
+    ctx.fillStyle = "#b9b6af"; ctx.fillRect(0, 0, n, n); speckle(ctx, 6000, n, ["#aeaba4", "#c4c1ba", "#a6a39c", "#cbc8c1"], 2);
+    ctx.strokeStyle = "rgba(120,118,112,0.25)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, n / 2); ctx.lineTo(n, n / 2); ctx.stroke();
+    for (let i = 0; i < 4; i++) { ctx.fillStyle = "rgba(90,88,84,0.35)"; ctx.beginPath(); ctx.arc(n * (0.25 + (i % 2) * 0.5), n * (0.25 + (i > 1) * 0.5), 3, 0, 7); ctx.fill(); }
+  }, rx, ry);
+  // global maps for furniture built from the library
+  M.oak.map = TEX.wood(1, 1); M.oak.color.set("#ffffff");
+  // per-mesh textures for the hand-built atrium shell, scaled to real size
+  (function texturizeShell() {
+    const base = {
+      carpet: { tex: TEX.carpet(1, 1), m: 1 }, plaster: { tex: TEX.plaster(1, 1), m: 2 },
+      concrete: { tex: TEX.concrete(1, 1), m: 1.5 }, wood: { tex: M.oak.map, m: 1 },
+    };
+    const kindOf = (mat) => mat === M.carpet || mat === M.lowerFloor ? "carpet" : mat === M.white || mat === M.whiteIn ? "plaster"
+      : mat === M.concrete || mat === concreteIn ? "concrete" : mat === M.oak ? "wood" : null;
+    const cache = new Map();
+    shell.traverse((o) => {
+      if (!o.isMesh || !o.geometry.parameters) return;
+      const kind = kindOf(o.material); if (!kind) return;
+      const pr = o.geometry.parameters; let a, b;
+      if (o.geometry.type === "BoxGeometry") { const d = [pr.width, pr.height, pr.depth].sort((p, q) => q - p); a = d[0]; b = d[1]; }
+      else if (o.geometry.type === "PlaneGeometry") { a = pr.width; b = pr.height; }
+      else if (o.geometry.type === "CylinderGeometry") { a = 2 * Math.PI * pr.radiusTop; b = pr.height; }
+      else return;
+      const rx = Math.max(1, Math.round(a / base[kind].m)), ry = Math.max(1, Math.round(b / base[kind].m));
+      const key = o.material.uuid + rx + "x" + ry;
+      if (!cache.has(key)) {
+        const t = base[kind].tex.clone(); t.repeat.set(rx, ry); t.needsUpdate = true;
+        const m = o.material.clone(); m.map = t; if (kind !== "carpet" || o.material === M.carpet) m.color.set("#ffffff"); else m.color.set("#9aa1a9");
+        cache.set(key, m);
+      }
+      o.material = cache.get(key);
+    });
+  })();
 
   // ---------- object library (built from scene.json) ----------
   function hashSeed(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -495,6 +546,50 @@
       return g;
     },
 
+    // ---- atrium details ----
+    "doorway-corridor"(o) {
+      // position = floor centre of the opening; opening faces local +z, corridor runs towards local -z
+      const [w, h, d] = o.size || [1.2, 2.3, 3.5], g = new T.Group();
+      const wood = M.oak, warm = colorMat("#f3e3c8", { roughness: 0.9 });
+      g.add(box(w, 0.04, d, colorMat("#8a6a48", { roughness: 0.8 }), 0, 0.02, -d / 2));
+      [-1, 1].forEach((s) => g.add(box(0.06, h, d, wood, s * w / 2, h / 2, -d / 2)));
+      g.add(box(w, 0.06, d, warm, 0, h, -d / 2));
+      g.add(box(w, h, 0.06, wood, 0, h / 2, -d));
+      // white surround with the opening
+      const sw = o.surround ?? 0.9, sh = o.wallHeight ?? 3.0;
+      [-1, 1].forEach((s) => g.add(box(sw, sh, 0.12, M.white, s * (w / 2 + sw / 2), sh / 2, 0)));
+      g.add(box(w, sh - h, 0.12, M.white, 0, h + (sh - h) / 2, 0));
+      const lamp = new T.PointLight("#ffcf8a", 0.9, d + 2, 2); lamp.position.set(0, h - 0.25, -d * 0.55); g.add(lamp);
+      for (let i = 1; i <= 2; i++) { const l = new T.Mesh(new T.CircleGeometry(0.08, 12), new T.MeshStandardMaterial({ emissive: "#ffd9a0", emissiveIntensity: 1.2, color: "#fff" })); l.rotation.x = Math.PI / 2; l.position.set(0, h - 0.035, -d * i / 3); g.add(l); }
+      g.userData.opening = { halfWidth: w / 2 };
+      return g;
+    },
+    "notice-board"(o) {
+      // position = bottom centre of the board; faces local +z; size = [width, height]
+      const [w, h] = o.size || [1.2, 1.0], g = new T.Group();
+      const rand = rng(hashSeed(o.id || "board"));
+      const tex = canvasTex(512, (ctx, n) => {
+        ctx.fillStyle = "#f7f7f4"; ctx.fillRect(0, 0, n, n);
+        ctx.fillStyle = o.header || "#2b2d8f"; ctx.fillRect(0, 0, n, n * 0.14);
+        ctx.fillStyle = "#ffffff"; ctx.font = `600 ${Math.round(n * 0.07)}px "Space Grotesk", sans-serif`; ctx.textBaseline = "middle";
+        ctx.fillText(o.title || "DIDACKATHON", n * 0.05, n * 0.075);
+        const cols = 4, rows = 4, pw = n / cols, ph = (n * 0.84) / rows;
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          if (rand() < 0.15) continue;
+          const x = c * pw + pw * 0.1 + rand() * 6, y = n * 0.16 + r * ph + ph * 0.08 + rand() * 6;
+          ctx.fillStyle = ["#ffffff", "#fff7c2", "#dcecff", "#ffe0e6", "#ffffff"][(rand() * 5) | 0];
+          ctx.fillRect(x, y, pw * 0.8, ph * 0.82);
+          ctx.fillStyle = "rgba(60,60,70,0.35)";
+          for (let k = 0; k < 5; k++) ctx.fillRect(x + 6, y + 10 + k * ph * 0.13, pw * (0.4 + rand() * 0.3), 3);
+          ctx.fillStyle = "#d33"; ctx.beginPath(); ctx.arc(x + pw * 0.4, y + 4, 4, 0, 7); ctx.fill();
+        }
+      });
+      g.add(box(w + 0.06, h + 0.06, 0.04, M.steel, 0, h / 2, 0));
+      const face = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
+      face.position.set(0, h / 2, 0.021); g.add(face);
+      return g;
+    },
+
     // ---- office furniture ----
     "desk"(o) {
       // position = floor centre of the desk; size = [width, height, depth]; the user sits on the local +z side
@@ -595,8 +690,15 @@
       g.rotation.y = deg(o.rotation);
       const sc = o.scale;
       if (Array.isArray(sc)) g.scale.set(sc[0], sc[1], sc[2]); else if (typeof sc === "number") g.scale.setScalar(sc);
-      g.name = id; g.userData = { type: o.type };
+      g.name = id; g.userData.type = o.type;
       objectsRoot.add(g);
+    });
+    // open the glass front where a doorway object sits on it
+    glassPanes.forEach((p) => { p.mesh.visible = true; });
+    objectsRoot.children.forEach((g) => {
+      const op = g.userData.opening;
+      if (!op || Math.abs(g.position.z - GLASS_Z) > 0.6) return;
+      glassPanes.forEach((p) => { if (p.x1 > g.position.x - op.halfWidth && p.x0 < g.position.x + op.halfWidth) p.mesh.visible = false; });
     });
     const plants = list.filter((o) => /^(plant-|planter-|green-)/.test(o.type)).length;
     document.getElementById("stats").textContent = `${list.length} objects · ${plants} plants`;
@@ -647,6 +749,12 @@
       m.castShadow = true; g.add(m);
     }
     return g;
+  }
+  function addSky() {
+    const sky = new T.SphereGeometry(90, 24, 12), cols = [], top = new T.Color("#8fb6dc"), hor = new T.Color("#e6eef3");
+    for (let i = 0; i < sky.attributes.position.count; i++) { const y = sky.attributes.position.getY(i) / 90; const c = hor.clone().lerp(top, Math.max(0, y)); cols.push(c.r, c.g, c.b); }
+    sky.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
+    scene.add(new T.Mesh(sky, new T.MeshBasicMaterial({ vertexColors: true, side: T.BackSide, fog: false })));
   }
   function buildRoomBase(base) {
     shell.visible = false;
@@ -724,10 +832,7 @@
 
     // outside: sky dome, ground, trees
     if (base.outside !== false) {
-      const sky = new T.SphereGeometry(90, 24, 12), cols = [], top = new T.Color("#8fb6dc"), hor = new T.Color("#e6eef3");
-      for (let i = 0; i < sky.attributes.position.count; i++) { const y = sky.attributes.position.getY(i) / 90; const c = hor.clone().lerp(top, Math.max(0, y)); cols.push(c.r, c.g, c.b); }
-      sky.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
-      scene.add(new T.Mesh(sky, new T.MeshBasicMaterial({ vertexColors: true, side: T.BackSide, fog: false })));
+      addSky();
       const ground = new T.Mesh(new T.PlaneGeometry(120, 120), new T.MeshStandardMaterial({ map: TEX.grass(40, 40), roughness: 1 }));
       ground.rotation.x = -Math.PI / 2; ground.position.y = base.outsideLevel ?? -0.15; ground.receiveShadow = true; scene.add(ground);
       const rand = rng(hashSeed("outside-trees"));
@@ -890,6 +995,7 @@
     .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then((data) => {
       const bt = data.base && data.base.type;
+      if (!bt) { scene.fog = null; addSky(); }
       const baseReady = bt === "scan" ? loadScanBase(data.base) : bt === "room" ? buildRoomBase(data.base) : Promise.resolve();
       if (data.meta && data.meta.name) document.querySelector("h1").textContent = data.meta.name;
       buildObjects(data); buildZones(data); window.atrium.data = data;

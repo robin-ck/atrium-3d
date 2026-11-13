@@ -3,55 +3,7 @@
 The 3D page (`index.html`) loads `scene.json`. That file describes the room (`base`) and every plant or piece of furniture in it (`objects`). To change the scene, ask Claude to edit **only `scene.json`** (usually its `objects` list), then republish the artifact.
 
 
-## Office room (scene.json)
-
-`scene.json` is a stylised model of the office, with dimensions taken from the photo scan. The scan itself is kept in `scene-office-scan.json`, and the atrium in `scene-atrium.json`; copy either over `scene.json` to switch back.
-
-- Units are metres, `y` is up, and the floor is at `y = 0`. The ceiling is at `y = 2.7`, and desk tops are at `y = 0.74`.
-- `x` runs from -2.0 (west wall) to 1.5 (east window wall). `z` runs from -3.9 (north window wall) to 3.7 (south wall).
-- Walk mode starts at the south-east corner and looks north.
-
-### Room block
-
-```json
-"base": { "type": "room", "x": [-2.0, 1.5], "z": [-3.9, 3.7], "height": 2.7,
-  "walls": [ { "side": "north", "kind": "window" }, { "side": "east", "kind": "window", "from": -3.9, "to": 0, "sill": 0.8 } ] }
-```
-
-Each wall side (`north`, `east`, `south`, `west`) is solid unless a `window` segment covers it. `from`/`to` are x values for north/south and z values for east/west. `sill` is the parapet height under the glass.
-
-Other base options: `ceilingLights` (default on; `false` hides them, `{ "spacing": 1.8 }` sets the grid in metres), `outside` (sky, ground and trees seen through the windows; default on), `sunDirection` (vector pointing towards the sun, default `[1, 0.55, -0.45]`, i.e. low sun from the east-north-east).
-
-### Zones
-
-| zone id | x range | z range | notes |
-|---|---|---|---|
-| desks-north | -1.75 to 1.05 | -2.5 to -0.9 | 4 desks, divider at z = -1.7; desk plants at y = 0.74 |
-| desks-south | -1.95 to 0.85 | 0.8 to 2.4 | 4 desks, divider at z = 1.6; desk plants at y = 0.74 |
-| middle-aisle | -1.9 to 1.05 | -0.55 to 0.45 | keep clear |
-| east-aisle | 1.05 to 1.45 | -3.4 to 3.4 | narrow, keep mostly clear |
-| east-windows | 1.4 to 1.5 | -3.9 to 3.7 | glass wall, sill at 0.8 m |
-| north-end | -1.95 to 1.45 | -3.85 to -3.0 | open floor at the windows; good for large plants |
-| south-end | -1.95 to 1.45 | 2.95 to 3.65 | open floor; whiteboard on the south wall |
-| west-wall | -2.0 to -1.9 | -3.9 to 3.7 | solid wall; green walls face east, so `rotation: 90` |
-
-### Office furniture types
-
-| type | notes |
-|---|---|
-| `desk` | position = floor centre, `size` [w, h, d] default [1.4, 0.74, 0.8]; the user side (keyboard, mouse, mug, papers) is local +z, so `rotation: 180` for a desk whose chair is on its north side; `"items": false` clears the desk, or list a subset such as `["keyboard", "mouse"]` |
-| `desk-divider` | position = floor centre, `size` [length, top height, thickness] |
-| `monitor` | position on the desk top (y = 0.74); screen faces +z, use `rotation: 180` to face -z |
-| `office-chair` | faces +z; `rotation: 180` faces -z; `color` sets the upholstery |
-| `whiteboard` | position = bottom centre of the board; faces +z; `size` [w, h] |
-
-Office example prompts:
-- "Put three large trees in the north end and a planter box along the south wall."
-- "Add a small plant on every desk."
-- "Cover the west wall with a green wall from z = -3 to z = 3, 2 m high."
-- "Make the west wall a window wall too."
-
-# Atrium (scene-atrium.json)
+# Atrium (scene.json, the default)
 
 ## Coordinates
 
@@ -99,6 +51,8 @@ Pillars stand at `x = -11.6, -7.2, 3.4` and `z = -6.5`. Mezzanine soffit (ceilin
 
 `color` on a plant sets the pot colour.
 
+**Atrium details** (from the second, partial atrium scan; positions estimated): `doorway-corridor` (`size` [width, height, depth]; the opening faces +z and the wood-lined corridor runs to -z; placed on the glass front at z = -7.25 it removes the glass pane there; `surround` sets the white wall width each side), `notice-board` (`size` [w, h], bottom centre, faces +z, `header` colour and `title` text).
+
 **Furniture**: `table-work`, `chair-shell`, `chair-lounge`, `side-table`, `bar-stool`, `kitchen-island`, `counter`, `coffee-machine`, `poster-frame`, `shelf`, `booth`. Boxes take `size`; chairs take `color`.
 
 ## Example prompts
@@ -108,3 +62,52 @@ Pillars stand at `x = -11.6, -7.2, 3.4` and `z = -6.5`. Mezzanine soffit (ceilin
 - "Put a green wall 4 m wide and 3 m high on the concrete wall right of the elevator."
 - "Replace the yellow chairs with green ones and add planter boxes between the work table and the kitchen."
 - "Make a second version of the scene called scene-greened.json with as much greenery as possible while keeping the walkway clear."
+
+## Office room (scene-office.json)
+
+`scene-office.json` is a stylised model of the office, with dimensions taken from the photo scan (the scan itself is `scene-office-scan.json`). Copy it over `scene.json` to show the office instead of the atrium.
+
+- Units are metres, `y` is up, and the floor is at `y = 0`. The ceiling is at `y = 2.7`, and desk tops are at `y = 0.74`.
+- `x` runs from -2.0 (west wall) to 1.5 (east window wall). `z` runs from -3.9 (north window wall) to 3.7 (south wall).
+- Walk mode starts at the south-east corner and looks north.
+
+### Room block
+
+```json
+"base": { "type": "room", "x": [-2.0, 1.5], "z": [-3.9, 3.7], "height": 2.7,
+  "walls": [ { "side": "north", "kind": "window" }, { "side": "east", "kind": "window", "from": -3.9, "to": 0, "sill": 0.8 } ] }
+```
+
+Each wall side (`north`, `east`, `south`, `west`) is solid unless a `window` segment covers it. `from`/`to` are x values for north/south and z values for east/west. `sill` is the parapet height under the glass.
+
+Other base options: `ceilingLights` (default on; `false` hides them, `{ "spacing": 1.8 }` sets the grid in metres), `outside` (sky, ground and trees seen through the windows; default on), `sunDirection` (vector pointing towards the sun, default `[1, 0.55, -0.45]`, i.e. low sun from the east-north-east).
+
+### Zones
+
+| zone id | x range | z range | notes |
+|---|---|---|---|
+| desks-north | -1.75 to 1.05 | -2.5 to -0.9 | 4 desks, divider at z = -1.7; desk plants at y = 0.74 |
+| desks-south | -1.95 to 0.85 | 0.8 to 2.4 | 4 desks, divider at z = 1.6; desk plants at y = 0.74 |
+| middle-aisle | -1.9 to 1.05 | -0.55 to 0.45 | keep clear |
+| east-aisle | 1.05 to 1.45 | -3.4 to 3.4 | narrow, keep mostly clear |
+| east-windows | 1.4 to 1.5 | -3.9 to 3.7 | glass wall, sill at 0.8 m |
+| north-end | -1.95 to 1.45 | -3.85 to -3.0 | open floor at the windows; good for large plants |
+| south-end | -1.95 to 1.45 | 2.95 to 3.65 | open floor; whiteboard on the south wall |
+| west-wall | -2.0 to -1.9 | -3.9 to 3.7 | solid wall; green walls face east, so `rotation: 90` |
+
+### Office furniture types
+
+| type | notes |
+|---|---|
+| `desk` | position = floor centre, `size` [w, h, d] default [1.4, 0.74, 0.8]; the user side (keyboard, mouse, mug, papers) is local +z, so `rotation: 180` for a desk whose chair is on its north side; `"items": false` clears the desk, or list a subset such as `["keyboard", "mouse"]` |
+| `desk-divider` | position = floor centre, `size` [length, top height, thickness] |
+| `monitor` | position on the desk top (y = 0.74); screen faces +z, use `rotation: 180` to face -z |
+| `office-chair` | faces +z; `rotation: 180` faces -z; `color` sets the upholstery |
+| `whiteboard` | position = bottom centre of the board; faces +z; `size` [w, h] |
+
+Office example prompts:
+- "Put three large trees in the north end and a planter box along the south wall."
+- "Add a small plant on every desk."
+- "Cover the west wall with a green wall from z = -3 to z = 3, 2 m high."
+- "Make the west wall a window wall too."
+

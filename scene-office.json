@@ -1,0 +1,428 @@
+{
+ "meta": {
+  "name": "Office room",
+  "units": "metres",
+  "axes": "x = west(-) to east(+), y = up, z = north(-) to south(+). Origin = floor centre. Window walls on the east (x = 1.5) and north (z = -3.9) sides.",
+  "notes": "Stylised model with dimensions from the KIRI scan. Edit 'objects' (and 'base' for walls/size). The photo scan version is scene-office-scan.json; the atrium is scene-atrium.json. Baseline matches the real room: no plants. Greening interventions are added as objects."
+ },
+ "base": {
+  "type": "room",
+  "x": [
+   -2.0,
+   1.5
+  ],
+  "z": [
+   -3.9,
+   3.7
+  ],
+  "height": 2.7,
+  "walls": [
+   {
+    "side": "north",
+    "kind": "window"
+   },
+   {
+    "side": "east",
+    "kind": "window"
+   },
+   {
+    "side": "south",
+    "kind": "solid"
+   },
+   {
+    "side": "west",
+    "kind": "solid"
+   }
+  ],
+  "walkStart": {
+   "position": [
+    1.1,
+    1.6,
+    3.2
+   ],
+   "yaw": 0
+  }
+ },
+ "zones": [
+  {
+   "id": "desks-north",
+   "label": "Desk row (north)",
+   "x": [
+    -1.75,
+    1.05
+   ],
+   "z": [
+    -2.5,
+    -0.9
+   ]
+  },
+  {
+   "id": "desks-south",
+   "label": "Desk row (south)",
+   "x": [
+    -1.95,
+    0.85
+   ],
+   "z": [
+    0.8,
+    2.4
+   ]
+  },
+  {
+   "id": "middle-aisle",
+   "label": "Aisle between desk rows",
+   "x": [
+    -1.9,
+    1.05
+   ],
+   "z": [
+    -0.55,
+    0.45
+   ]
+  },
+  {
+   "id": "east-aisle",
+   "label": "Aisle along east windows",
+   "x": [
+    1.05,
+    1.45
+   ],
+   "z": [
+    -3.4,
+    3.4
+   ]
+  },
+  {
+   "id": "east-windows",
+   "label": "East window wall, x = 1.5",
+   "x": [
+    1.4,
+    1.5
+   ],
+   "z": [
+    -3.9,
+    3.7
+   ]
+  },
+  {
+   "id": "north-end",
+   "label": "Open floor at north windows",
+   "x": [
+    -1.95,
+    1.45
+   ],
+   "z": [
+    -3.85,
+    -3.0
+   ]
+  },
+  {
+   "id": "south-end",
+   "label": "Open floor, south end",
+   "x": [
+    -1.95,
+    1.45
+   ],
+   "z": [
+    2.95,
+    3.65
+   ]
+  },
+  {
+   "id": "west-wall",
+   "label": "West wall",
+   "x": [
+    -2.0,
+    -1.9
+   ],
+   "z": [
+    -3.9,
+    3.7
+   ]
+  }
+ ],
+ "objects": [
+  {
+   "id": "divider-north",
+   "type": "desk-divider",
+   "position": [
+    -0.35,
+    0,
+    -1.7
+   ],
+   "size": [
+    2.8,
+    1.25,
+    0.04
+   ]
+  },
+  {
+   "id": "desk-north-n1",
+   "type": "desk",
+   "position": [
+    -1.05,
+    0,
+    -2.1
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "monitor-north-n1",
+   "type": "monitor",
+   "position": [
+    -1.05,
+    0.74,
+    -1.88
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-north-n1",
+   "type": "office-chair",
+   "position": [
+    -1.05,
+    0,
+    -2.76
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-north-s1",
+   "type": "desk",
+   "position": [
+    -1.05,
+    0,
+    -1.3
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "monitor-north-s1",
+   "type": "monitor",
+   "position": [
+    -1.05,
+    0.74,
+    -1.52
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-north-s1",
+   "type": "office-chair",
+   "position": [
+    -1.05,
+    0,
+    -0.64
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "desk-north-n2",
+   "type": "desk",
+   "position": [
+    0.35,
+    0,
+    -2.1
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "monitor-north-n2",
+   "type": "monitor",
+   "position": [
+    0.35,
+    0.74,
+    -1.88
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-north-n2",
+   "type": "office-chair",
+   "position": [
+    0.35,
+    0,
+    -2.76
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-north-s2",
+   "type": "desk",
+   "position": [
+    0.35,
+    0,
+    -1.3
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "monitor-north-s2",
+   "type": "monitor",
+   "position": [
+    0.35,
+    0.74,
+    -1.52
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-north-s2",
+   "type": "office-chair",
+   "position": [
+    0.35,
+    0,
+    -0.64
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "divider-south",
+   "type": "desk-divider",
+   "position": [
+    -0.55,
+    0,
+    1.6
+   ],
+   "size": [
+    2.8,
+    1.25,
+    0.04
+   ]
+  },
+  {
+   "id": "desk-south-n1",
+   "type": "desk",
+   "position": [
+    -1.25,
+    0,
+    1.2
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "monitor-south-n1",
+   "type": "monitor",
+   "position": [
+    -1.25,
+    0.74,
+    1.42
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-south-n1",
+   "type": "office-chair",
+   "position": [
+    -1.25,
+    0,
+    0.54
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-south-s1",
+   "type": "desk",
+   "position": [
+    -1.25,
+    0,
+    2.0
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "monitor-south-s1",
+   "type": "monitor",
+   "position": [
+    -1.25,
+    0.74,
+    1.78
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-south-s1",
+   "type": "office-chair",
+   "position": [
+    -1.25,
+    0,
+    2.66
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "desk-south-n2",
+   "type": "desk",
+   "position": [
+    0.15,
+    0,
+    1.2
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "monitor-south-n2",
+   "type": "monitor",
+   "position": [
+    0.15,
+    0.74,
+    1.42
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-south-n2",
+   "type": "office-chair",
+   "position": [
+    0.15,
+    0,
+    0.54
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-south-s2",
+   "type": "desk",
+   "position": [
+    0.15,
+    0,
+    2.0
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "monitor-south-s2",
+   "type": "monitor",
+   "position": [
+    0.15,
+    0.74,
+    1.78
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-south-s2",
+   "type": "office-chair",
+   "position": [
+    0.15,
+    0,
+    2.66
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "whiteboard-south",
+   "type": "whiteboard",
+   "position": [
+    -0.4,
+    0.9,
+    3.68
+   ],
+   "rotation": 180,
+   "size": [
+    1.8,
+    1.1
+   ]
+  }
+ ]
+}
