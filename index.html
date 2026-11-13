@@ -277,6 +277,34 @@
   // underside of mezzanine (ceiling of ground floor)
   shell.traverse((o) => { if (o.isMesh && o.material === M.glass) { o.castShadow = false; o.receiveShadow = false; } });
 
+  // ---------- procedural textures ----------
+  function canvasTex(size, draw, rx, ry) {
+    const c = document.createElement("canvas"); c.width = c.height = size;
+    draw(c.getContext("2d"), size);
+    const t = new T.CanvasTexture(c);
+    t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx || 1, ry || 1);
+    t.encoding = T.sRGBEncoding; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    return t;
+  }
+  function speckle(ctx, n, size, colors, rmax) {
+    for (let i = 0; i < n; i++) {
+      ctx.fillStyle = colors[(Math.random() * colors.length) | 0];
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * rmax, 1 + Math.random() * rmax);
+    }
+  }
+  const TEX = {
+    carpet: (rx, ry) => canvasTex(256, (ctx, n) => { ctx.fillStyle = "#6e7884"; ctx.fillRect(0, 0, n, n); speckle(ctx, 9000, n, ["#5d6672", "#7f8a96", "#66707c", "#8a939d"], 2); }, rx, ry),
+    plaster: (rx, ry) => canvasTex(256, (ctx, n) => { ctx.fillStyle = "#efeee9"; ctx.fillRect(0, 0, n, n); speckle(ctx, 2500, n, ["#e8e7e1", "#f5f4f0"], 3); }, rx, ry),
+    fabric: (rx, ry) => canvasTex(128, (ctx, n) => { ctx.fillStyle = "#8c8a3c"; ctx.fillRect(0, 0, n, n); speckle(ctx, 3000, n, ["#7f7d34", "#99974a", "#868440"], 1.5); }, rx, ry),
+    tiles: (rx, ry) => canvasTex(256, (ctx, n) => {  // one texture = 2 x 2 tiles of 60 cm
+      ctx.fillStyle = "#f4f4f1"; ctx.fillRect(0, 0, n, n); speckle(ctx, 2000, n, ["#e9e9e5", "#fbfbf9"], 2);
+      ctx.strokeStyle = "#c9cac6"; ctx.lineWidth = 3;
+      for (let i = 0; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * n / 2, 0); ctx.lineTo(i * n / 2, n); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i * n / 2); ctx.lineTo(n, i * n / 2); ctx.stroke(); }
+    }, rx, ry),
+    grass: (rx, ry) => canvasTex(256, (ctx, n) => { ctx.fillStyle = "#6f8f4e"; ctx.fillRect(0, 0, n, n); speckle(ctx, 8000, n, ["#5f7f42", "#7d9c58", "#668849", "#86a35f"], 3); }, rx, ry),
+  };
+  const fabricMat = new T.MeshStandardMaterial({ map: TEX.fabric(4, 1), roughness: 1 });
+
   // ---------- object library (built from scene.json) ----------
   function hashSeed(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -469,21 +497,38 @@
 
     // ---- office furniture ----
     "desk"(o) {
-      // position = floor centre of the desk; size = [width, height, depth]
+      // position = floor centre of the desk; size = [width, height, depth]; the user sits on the local +z side
       const [w, h, d] = o.size || [1.4, 0.74, 0.8], g = new T.Group();
-      g.add(box(w, 0.03, d, colorMat(o.color || "#f2f1ec", { roughness: 0.8 }), 0, h - 0.015, 0));
+      g.add(box(w, 0.025, d, colorMat(o.color || "#f2f1ec", { roughness: 0.75 }), 0, h - 0.0125, 0));
+      g.add(box(w, 0.012, d, colorMat("#d9d8d2"), 0, h - 0.031, 0));
       [-1, 1].forEach((s) => {
-        g.add(box(0.05, h - 0.03, 0.05, M.steel, s * (w / 2 - 0.08), (h - 0.03) / 2, 0));
-        g.add(box(0.06, 0.03, d - 0.1, M.steel, s * (w / 2 - 0.08), 0.015, 0));
+        g.add(box(0.06, h - 0.04, 0.06, M.steel, s * (w / 2 - 0.1), (h - 0.04) / 2, 0));
+        g.add(box(0.07, 0.03, d - 0.08, M.steel, s * (w / 2 - 0.1), 0.015, 0));
       });
-      g.add(box(w - 0.2, 0.04, 0.04, M.steel, 0, h - 0.08, 0));
+      g.add(box(w - 0.24, 0.05, 0.03, M.steel, 0, h - 0.07, -d / 2 + 0.06));
+      const all = ["keyboard", "mouse", "mug", "papers"];
+      const items = o.items === false ? [] : Array.isArray(o.items) ? o.items : all;
+      const top = h;
+      if (items.includes("keyboard")) {
+        g.add(box(0.44, 0.02, 0.14, colorMat("#2b2d30"), 0, top + 0.01, d / 2 - 0.2));
+        g.add(box(0.42, 0.004, 0.12, colorMat("#45484c"), 0, top + 0.021, d / 2 - 0.2, false));
+      }
+      if (items.includes("mouse")) g.add(box(0.06, 0.025, 0.1, colorMat("#2b2d30"), 0.32, top + 0.012, d / 2 - 0.19));
+      if (items.includes("mug")) {
+        const mug = cyl(0.04, 0.04, 0.1, colorMat(o.mugColor || "#ffffff"), -0.45, top + 0.05, d / 2 - 0.18, 14); g.add(mug);
+      }
+      if (items.includes("papers")) {
+        const pp = box(0.21, 0.01, 0.297, colorMat("#fafaf7"), -0.32, top + 0.005, d / 2 - 0.4, false); pp.rotation.y = 0.25; g.add(pp);
+        const pp2 = box(0.21, 0.01, 0.297, colorMat("#f2efe6"), -0.28, top + 0.012, d / 2 - 0.38, false); pp2.rotation.y = -0.1; g.add(pp2);
+      }
       return g;
     },
     "desk-divider"(o) {
       // position = floor centre; size = [length, top height, thickness]; panel sits above desk height
       const [w, h, t] = o.size || [2.8, 1.25, 0.04];
       const g = new T.Group(), bottom = 0.74;
-      g.add(box(w, h - bottom, t, colorMat(o.color || "#8c8a3c", { roughness: 1 }), 0, (h + bottom) / 2, 0));
+      g.add(box(w, h - bottom, t, o.color ? colorMat(o.color, { roughness: 1 }) : fabricMat, 0, (h + bottom) / 2, 0));
+      g.add(box(w, 0.02, t + 0.01, M.steel, 0, h, 0));
       return g;
     },
     "monitor"(o) {
@@ -591,68 +636,129 @@
   }
 
   // ---------- abstract room base (type "room") ----------
+  function outdoorTree(rand, hgt) {
+    const g = new T.Group();
+    g.add(cyl(0.12, 0.2, hgt * 0.45, M.bark, 0, hgt * 0.225, 0, 7));
+    const crownMats = leafMats.slice(0, 4);
+    for (let i = 0; i < 6; i++) {
+      const r = hgt * (0.16 + rand() * 0.1);
+      const m = new T.Mesh(new T.IcosahedronGeometry(r, 0), crownMats[i % crownMats.length]);
+      m.position.set((rand() - 0.5) * hgt * 0.35, hgt * (0.55 + rand() * 0.35), (rand() - 0.5) * hgt * 0.35);
+      m.castShadow = true; g.add(m);
+    }
+    return g;
+  }
   function buildRoomBase(base) {
     shell.visible = false;
     scene.fog = null;
     const [x0, x1] = base.x, [z0, z1] = base.z, h = base.height || 2.7;
+    const W = x1 - x0, D = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
     const g = new T.Group(); scene.add(g);
-    const floor = box(x1 - x0, 0.1, z1 - z0, M.carpet, (x0 + x1) / 2, -0.05, (z0 + z1) / 2, false);
-    floor.receiveShadow = true; g.add(floor);
-    // ceiling faces down only, so it disappears when orbiting from above
-    g.add(inwardPlane(x1 - x0, z1 - z0, M.whiteIn, new T.Vector3((x0 + x1) / 2, h, (z0 + z1) / 2), 0, Math.PI / 2));
-    // wall frame: origin, direction along the wall, inward rotation
+
+    // floor, ceiling and materials
+    const carpet = new T.MeshStandardMaterial({ map: TEX.carpet(W, D), roughness: 1 });
+    const floor = box(W, 0.1, D, carpet, cx, -0.05, cz, false); floor.receiveShadow = true; g.add(floor);
+    const ceilMat = new T.MeshStandardMaterial({ map: TEX.tiles(W / 1.2, D / 1.2), roughness: 0.95, shadowSide: T.DoubleSide });
+    const ceiling = inwardPlane(W, D, ceilMat, new T.Vector3(cx, h, cz), 0, Math.PI / 2); ceiling.castShadow = true; g.add(ceiling);
+    const wallMat = (len, hh) => new T.MeshStandardMaterial({ map: TEX.plaster(len / 2, hh / 2), color: base.wallColor || "#ffffff", roughness: 0.92, shadowSide: T.DoubleSide });
+    const skirtMat = colorMat("#3a3c3f", { roughness: 0.7 });
+
+    // walls: segments default to solid where no window is specified
     const SIDES = {
-      north: { len: x1 - x0, at: (t) => new T.Vector3(x0 + t, 0, z0), rot: 0, start: x0 },
-      south: { len: x1 - x0, at: (t) => new T.Vector3(x0 + t, 0, z1), rot: Math.PI, start: x0 },
-      west: { len: z1 - z0, at: (t) => new T.Vector3(x0, 0, z0 + t), rot: Math.PI / 2, start: z0 },
-      east: { len: z1 - z0, at: (t) => new T.Vector3(x1, 0, z0 + t), rot: -Math.PI / 2, start: z0 },
+      north: { len: W, at: (t) => new T.Vector3(x0 + t, 0, z0), rot: 0, start: x0 },
+      south: { len: W, at: (t) => new T.Vector3(x0 + t, 0, z1), rot: Math.PI, start: x0 },
+      west: { len: D, at: (t) => new T.Vector3(x0, 0, z0 + t), rot: Math.PI / 2, start: z0 },
+      east: { len: D, at: (t) => new T.Vector3(x1, 0, z0 + t), rot: -Math.PI / 2, start: z0 },
     };
     const walls = base.walls || [];
-    const wallMat = new T.MeshStandardMaterial({ color: base.wallColor || "#efefeb", roughness: 0.9 });
+    const windowSides = new Set();
     Object.keys(SIDES).forEach((side) => {
       const S = SIDES[side];
-      // segments default to solid where nothing is specified
       const segs = walls.filter((w) => w.side === side).map((w) => ({
         kind: w.kind, a: Math.max(0, (w.from ?? S.start) - S.start), b: Math.min(S.len, (w.to ?? S.start + S.len) - S.start), sill: w.sill ?? 0.8,
       })).sort((p, q) => p.a - q.a);
+      if (segs.some((q) => q.kind === "window")) windowSides.add(side);
       const all = []; let t = 0;
-      segs.forEach((s) => { if (s.a > t) all.push({ kind: "solid", a: t, b: s.a }); all.push(s); t = s.b; });
+      segs.forEach((q) => { if (q.a > t) all.push({ kind: "solid", a: t, b: q.a }); all.push(q); t = q.b; });
       if (t < S.len) all.push({ kind: "solid", a: t, b: S.len });
-      all.forEach((s) => {
-        const len = s.b - s.a; if (len <= 0.01) return;
-        const mid = S.at((s.a + s.b) / 2);
-        const seg = new T.Group(); seg.position.copy(mid); seg.rotation.y = S.rot; g.add(seg);
-        const plane = (w, hh, y, mat) => { const m = new T.Mesh(new T.PlaneGeometry(w, hh), mat); m.position.y = y; m.receiveShadow = true; seg.add(m); };
-        if (s.kind === "window") {
-          plane(len, s.sill, s.sill / 2, wallMat);                          // parapet below the glass
-          plane(len, 0.15, h - 0.075, wallMat);                              // header above the glass
-          const glass = new T.Mesh(new T.PlaneGeometry(len, h - s.sill - 0.15), M.glass);
-          glass.position.set(0, s.sill + (h - s.sill - 0.15) / 2, 0); seg.add(glass);
+      all.forEach((q) => {
+        const len = q.b - q.a; if (len <= 0.01) return;
+        const seg = new T.Group(); seg.position.copy(S.at((q.a + q.b) / 2)); seg.rotation.y = S.rot; g.add(seg);
+        const plane = (w, hh, y) => { const m = new T.Mesh(new T.PlaneGeometry(w, hh), wallMat(w, hh)); m.position.y = y; m.receiveShadow = true; m.castShadow = true; seg.add(m); };
+        const skirt = new T.Mesh(new T.BoxGeometry(len, 0.08, 0.015), skirtMat); skirt.position.set(0, 0.04, 0.008); seg.add(skirt);
+        if (q.kind === "window") {
+          const gh = h - q.sill - 0.15;
+          plane(len, q.sill, q.sill / 2);
+          plane(len, 0.15, h - 0.075);
+          const glass = new T.Mesh(new T.PlaneGeometry(len, gh), M.glass); glass.position.set(0, q.sill + gh / 2, 0); seg.add(glass);
+          const frame = colorMat("#2a2c2f", { roughness: 0.5, metalness: 0.3 });
           const n = Math.max(1, Math.round(len / 1.3));
           for (let i = 0; i <= n; i++) {
-            const m = new T.Mesh(new T.BoxGeometry(0.05, h - s.sill - 0.15, 0.06), M.black);
-            m.position.set(-len / 2 + i * len / n, s.sill + (h - s.sill - 0.15) / 2, 0.03); seg.add(m);
+            const m = new T.Mesh(new T.BoxGeometry(0.06, gh, 0.08), frame); m.position.set(-len / 2 + i * len / n, q.sill + gh / 2, 0.02); m.castShadow = true; seg.add(m);
           }
-          const sill = new T.Mesh(new T.BoxGeometry(len, 0.04, 0.22), M.white); sill.position.set(0, s.sill, 0.11); seg.add(sill);
+          [q.sill + 0.02, q.sill + gh * 0.72, h - 0.17].forEach((y) => { const m = new T.Mesh(new T.BoxGeometry(len, 0.05, 0.08), frame); m.position.set(0, y, 0.02); m.castShadow = true; seg.add(m); });
+          const sill = new T.Mesh(new T.BoxGeometry(len, 0.03, 0.25), colorMat("#e6e5e0", { roughness: 0.6 })); sill.position.set(0, q.sill, 0.12); sill.castShadow = sill.receiveShadow = true; seg.add(sill);
+          // radiator under the window
+          const rad = new T.Mesh(new T.BoxGeometry(Math.min(len - 0.4, 2.4), 0.45, 0.08), colorMat("#f1f1ee", { roughness: 0.5 }));
+          rad.position.set(0, 0.35, 0.09); rad.castShadow = rad.receiveShadow = true; seg.add(rad);
         } else {
-          plane(len, h, h / 2, wallMat);
+          plane(len, h, h / 2);
         }
       });
     });
-    // skirting is implicit; camera and walk settings
-    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, span = Math.max(x1 - x0, z1 - z0);
-    const v3 = (a) => new T.Vector3(...a);
+
+    // ceiling light panels (60 x 60 cm) and warm fill lights
+    if (base.ceilingLights !== false) {
+      const sp = (base.ceilingLights && base.ceilingLights.spacing) || 1.8;
+      const panelMat = new T.MeshStandardMaterial({ color: "#ffffff", emissive: "#fff6e6", emissiveIntensity: 0.9, side: T.FrontSide });
+      const nx = Math.max(1, Math.floor(W / sp)), nz = Math.max(1, Math.floor(D / sp));
+      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+        const px = x0 + (i + 0.5) * W / nx, pz = z0 + (j + 0.5) * D / nz;
+        g.add(inwardPlane(0.6, 0.6, panelMat, new T.Vector3(px, h - 0.005, pz), 0, Math.PI / 2));
+      }
+      const nl = Math.min(6, nz);
+      for (let j = 0; j < nl; j++) {
+        const pl = new T.PointLight("#ffe9cc", 0.32, 6, 2); pl.position.set(cx, h - 0.3, z0 + (j + 0.5) * D / nl); g.add(pl);
+      }
+    }
+
+    // outside: sky dome, ground, trees
+    if (base.outside !== false) {
+      const sky = new T.SphereGeometry(90, 24, 12), cols = [], top = new T.Color("#8fb6dc"), hor = new T.Color("#e6eef3");
+      for (let i = 0; i < sky.attributes.position.count; i++) { const y = sky.attributes.position.getY(i) / 90; const c = hor.clone().lerp(top, Math.max(0, y)); cols.push(c.r, c.g, c.b); }
+      sky.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
+      scene.add(new T.Mesh(sky, new T.MeshBasicMaterial({ vertexColors: true, side: T.BackSide, fog: false })));
+      const ground = new T.Mesh(new T.PlaneGeometry(120, 120), new T.MeshStandardMaterial({ map: TEX.grass(40, 40), roughness: 1 }));
+      ground.rotation.x = -Math.PI / 2; ground.position.y = base.outsideLevel ?? -0.15; ground.receiveShadow = true; scene.add(ground);
+      const rand = rng(hashSeed("outside-trees"));
+      const spots = [];
+      if (windowSides.has("east")) for (let i = 0; i < 7; i++) spots.push([x1 + 4 + rand() * 9, z0 - 3 + rand() * (D + 6)]);
+      if (windowSides.has("north")) for (let i = 0; i < 6; i++) spots.push([x0 - 3 + rand() * (W + 6), z0 - 4 - rand() * 9]);
+      if (windowSides.has("west")) for (let i = 0; i < 6; i++) spots.push([x0 - 4 - rand() * 9, z0 + rand() * D]);
+      if (windowSides.has("south")) for (let i = 0; i < 6; i++) spots.push([x0 + rand() * W, z1 + 4 + rand() * 9]);
+      spots.forEach(([x, z]) => { const t = outdoorTree(rand, 6 + rand() * 5); t.position.set(x, ground.position.y, z); t.rotation.y = rand() * 6.3; scene.add(t); });
+    }
+
+    // sun: low from the east-north-east, so light falls through the window walls
+    const sunDir = new T.Vector3(...(base.sunDirection || [1, 0.55, -0.45])).normalize();
+    sun.position.copy(new T.Vector3(cx, 0, cz).addScaledVector(sunDir, 14));
+    sun.target.position.set(cx, 0, cz); scene.add(sun.target);
+    sun.intensity = 1.5;
+    const ext = Math.max(W, D) / 2 + 2;
+    Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 1, far: 40 });
+    sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.02; sun.shadow.radius = 3;
+    fill.visible = false;
+
+    // camera and walk settings
+    const span = Math.max(W, D), v3 = (a) => new T.Vector3(...a);
     ORBIT_START.target.set(cx, 0.6, cz);
-    ORBIT_START.pos.set(cx + span * 0.75, span * 0.95, cz + span * 0.9);
+    ORBIT_START.pos.set(cx - span * 0.6, span * 0.95, cz + span * 0.9);
     if (base.orbitStart) { ORBIT_START.pos.copy(v3(base.orbitStart.position)); ORBIT_START.target.copy(v3(base.orbitStart.target)); }
     WALK_START.pos.set(cx, 1.6, z1 - 0.5); WALK_START.yaw = 0; WALK_START.pitch = 0;
     if (base.walkStart) { WALK_START.pos.copy(v3(base.walkStart.position)); WALK_START.yaw = deg(base.walkStart.yaw); }
     walkBounds = base.walkBounds || { x: [x0 + 0.3, x1 - 0.3], z: [z0 + 0.3, z1 - 0.3] };
     controls.maxDistance = 30;
-    sun.shadow.camera.left = x0 - 2; sun.shadow.camera.right = x1 + 2; sun.shadow.camera.top = z1 + 2; sun.shadow.camera.bottom = z0 - 2;
-    sun.shadow.camera.updateProjectionMatrix();
-    sun.position.set(cx + 4, 12, cz - 3); sun.target.position.set(cx, 0, cz); scene.add(sun.target);
-    sun.intensity = 1.1;
     setMode(mode);
     return Promise.resolve();
   }

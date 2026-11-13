@@ -20,6 +20,8 @@ The 3D page (`index.html`) loads `scene.json`. That file describes the room (`ba
 
 Each wall side (`north`, `east`, `south`, `west`) is solid unless a `window` segment covers it. `from`/`to` are x values for north/south and z values for east/west. `sill` is the parapet height under the glass.
 
+Other base options: `ceilingLights` (default on; `false` hides them, `{ "spacing": 1.8 }` sets the grid in metres), `outside` (sky, ground and trees seen through the windows; default on), `sunDirection` (vector pointing towards the sun, default `[1, 0.55, -0.45]`, i.e. low sun from the east-north-east).
+
 ### Zones
 
 | zone id | x range | z range | notes |
@@ -37,7 +39,7 @@ Each wall side (`north`, `east`, `south`, `west`) is solid unless a `window` seg
 
 | type | notes |
 |---|---|
-| `desk` | position = floor centre, `size` [w, h, d] default [1.4, 0.74, 0.8] |
+| `desk` | position = floor centre, `size` [w, h, d] default [1.4, 0.74, 0.8]; the user side (keyboard, mouse, mug, papers) is local +z, so `rotation: 180` for a desk whose chair is on its north side; `"items": false` clears the desk, or list a subset such as `["keyboard", "mouse"]` |
 | `desk-divider` | position = floor centre, `size` [length, top height, thickness] |
 | `monitor` | position on the desk top (y = 0.74); screen faces +z, use `rotation: 180` to face -z |
 | `office-chair` | faces +z; `rotation: 180` faces -z; `color` sets the upholstery |
