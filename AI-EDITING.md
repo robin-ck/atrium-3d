@@ -3,7 +3,21 @@
 The 3D page (`index.html`) loads `scene.json`. That file describes the room (`base`) and every plant or piece of furniture in it (`objects`). To change the scene, ask Claude to edit **only `scene.json`** (usually its `objects` list), then republish the artifact.
 
 
-# Atrium (scene.json, the default)
+# Atrium splat view (scene.json, the default)
+
+`scene.json` shows the second atrium scan as about 345,000 soft colour blobs (`atrium-splats.b64.txt`), a splat-style look. It covers only the scanned part around the wood-lined corridor, so use the zones below. The scan already contains a real plant; `objects` starts empty.
+
+- Units are metres, `y` up, floor at `y = 0`; origin = floor centre of the scanned area. Ceiling (under the mezzanine) at about 2.7 m.
+- Base options: `splatSize` (blob size, default 3.2), `softness` (edge falloff, default 3), `clipHeight` (ceiling cut in orbit view).
+
+| zone id | x range | z range | notes |
+|---|---|---|---|
+| corridor-doorway | 1.0 to 2.2 | -2.0 to -1.2 | keep clear |
+| plant-corner | 0.2 to 1.0 | -2.5 to -1.7 | real plant in the scan |
+| notice-wall | 3.0 to 3.6 | -1.6 to 0.4 | notice boards; plants can stand in front at x ≈ 2.8 |
+| open-floor | -0.5 to 3.0 | -1.0 to 1.5 | open floor |
+
+# Stylised atrium (scene-atrium.json)
 
 ## Coordinates
 

@@ -868,6 +868,76 @@
     return Promise.resolve();
   }
 
+  // ---------- splat-style base (type "splats"): soft coloured blobs sampled from a scan ----------
+  let splatUniforms = null, splatClipHeight = 1e6;
+  function loadSplatBase(base) {
+    shell.visible = false;
+    scene.fog = null;
+    scene.background = new T.Color("#e4e9ee");
+    const v3 = (a) => new T.Vector3(...a);
+    if (base.orbitStart) { ORBIT_START.pos.copy(v3(base.orbitStart.position)); ORBIT_START.target.copy(v3(base.orbitStart.target)); }
+    if (base.walkStart) { WALK_START.pos.copy(v3(base.walkStart.position)); WALK_START.yaw = deg(base.walkStart.yaw); WALK_START.pitch = 0; }
+    if (base.walkBounds) walkBounds = base.walkBounds;
+    if (base.clipHeight) splatClipHeight = base.clipHeight;
+    controls.maxDistance = 30;
+    const fail = () => {
+      document.getElementById("error-text").textContent = `The splat file (${base.data}) could not be loaded. Plants and furniture are still shown.`;
+      document.getElementById("error").hidden = false;
+    };
+    return fetch(base.data).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); }).then((txt) => {
+      const bin = atob(txt.trim()), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const dv = new DataView(bytes.buffer);
+      if (String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]) !== "SPL1") throw new Error("not a splat file");
+      const n = dv.getUint32(4, true), q = dv.getFloat32(8, true), spacing = dv.getFloat32(12, true);
+      const pos = new Float32Array(n * 3), col = new Uint8Array(n * 3), scl = new Float32Array(n);
+      const sc = base.scale || 1, off = base.offset || [0, 0, 0];
+      let rs = 12345;
+      for (let i = 0; i < n; i++) {
+        const o = 16 + i * 9;
+        pos[i * 3] = dv.getInt16(o, true) * q * sc + off[0];
+        pos[i * 3 + 1] = dv.getInt16(o + 2, true) * q * sc + off[1];
+        pos[i * 3 + 2] = dv.getInt16(o + 4, true) * q * sc + off[2];
+        col[i * 3] = bytes[o + 6]; col[i * 3 + 1] = bytes[o + 7]; col[i * 3 + 2] = bytes[o + 8];
+        rs = (rs * 1103515245 + 12345) & 0x7fffffff; scl[i] = 0.6 + (rs / 0x7fffffff) * 0.9;
+      }
+      const geo = new T.BufferGeometry();
+      geo.setAttribute("position", new T.BufferAttribute(pos, 3));
+      geo.setAttribute("color", new T.BufferAttribute(col, 3, true));
+      geo.setAttribute("aScale", new T.BufferAttribute(scl, 1));
+      splatUniforms = {
+        uSize: { value: (base.splatSize || 3.2) * spacing * sc },
+        uScale: { value: 1 },
+        uClip: { value: mode === "orbit" ? splatClipHeight : 1e6 },
+        uSoft: { value: base.softness ?? 3.0 },
+      };
+      const mat = new T.ShaderMaterial({
+        uniforms: splatUniforms, transparent: true, depthWrite: true,
+        vertexShader: `
+          attribute float aScale; attribute vec3 color;
+          uniform float uSize, uScale; varying vec3 vColor; varying float vY;
+          void main() {
+            vColor = color; vY = (modelMatrix * vec4(position, 1.0)).y;
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mv;
+            gl_PointSize = clamp(uSize * aScale * uScale / -mv.z, 1.0, 48.0);
+          }`,
+        fragmentShader: `
+          uniform float uClip, uSoft; varying vec3 vColor; varying float vY;
+          void main() {
+            if (vY > uClip) discard;
+            vec2 d = gl_PointCoord - 0.5; float r2 = dot(d, d) * 4.0;
+            float a = exp(-r2 * uSoft);
+            if (a < 0.18) discard;
+            gl_FragColor = vec4(vColor, a);
+          }`,
+      });
+      const pts = new T.Points(geo, mat); pts.frustumCulled = false;
+      scene.add(pts); window.atrium.base = pts;
+      resize(); setMode(mode);
+    }).catch(fail);
+  }
+
   // ---------- scanned room base ----------
   const scanClip = new T.Plane(new T.Vector3(0, -1, 0), 1e6);
   let scanClipHeight = 1e6;
@@ -922,6 +992,7 @@
     btnOrbit.setAttribute("aria-pressed", m === "orbit"); btnWalk.setAttribute("aria-pressed", m === "walk");
     controls.enabled = m === "orbit";
     scanClip.constant = m === "orbit" ? scanClipHeight : 1e6; // cut the ceiling off only when looking in from outside
+    if (splatUniforms) splatUniforms.uClip.value = m === "orbit" ? splatClipHeight : 1e6;
     if (m === "walk") {
       camera.position.copy(WALK_START.pos); walk.yaw = WALK_START.yaw; walk.pitch = WALK_START.pitch;
       hint.innerHTML = "<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to walk · drag to look · <kbd>Shift</kbd> faster · <kbd>Esc</kbd> back to orbit";
@@ -979,6 +1050,7 @@
   function resize() {
     const w = host.clientWidth || window.innerWidth, h = host.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    if (splatUniforms) splatUniforms.uScale.value = h * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * Math.PI / 360));
   }
   window.addEventListener("resize", resize); resize();
   const clock = new T.Clock();
@@ -996,7 +1068,7 @@
     .then((data) => {
       const bt = data.base && data.base.type;
       if (!bt) { scene.fog = null; addSky(); }
-      const baseReady = bt === "scan" ? loadScanBase(data.base) : bt === "room" ? buildRoomBase(data.base) : Promise.resolve();
+      const baseReady = bt === "scan" ? loadScanBase(data.base) : bt === "room" ? buildRoomBase(data.base) : bt === "splats" ? loadSplatBase(data.base) : Promise.resolve();
       if (data.meta && data.meta.name) document.querySelector("h1").textContent = data.meta.name;
       buildObjects(data); buildZones(data); window.atrium.data = data;
       return baseReady.then(() => { window.atrium.ready = true; });
