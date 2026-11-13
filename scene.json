@@ -3,7 +3,7 @@
   "name": "Office room",
   "units": "metres",
   "axes": "x = west(-) to east(+), y = up, z = north(-) to south(+). Origin = floor centre. Window walls on the east (x = 1.5) and north (z = -3.9) sides.",
-  "notes": "Stylised model with dimensions from the KIRI scan. Edit 'objects' (and 'base' for walls/size). The photo scan version is scene-office-scan.json; the atrium is scene-atrium.json."
+  "notes": "Stylised model with dimensions from the KIRI scan. Edit 'objects' (and 'base' for walls/size). The photo scan version is scene-office-scan.json; the atrium is scene-atrium.json. Baseline matches the real room: no plants. Greening interventions are added as objects."
  },
  "base": {
   "type": "room",
@@ -415,51 +415,6 @@
     1.8,
     1.1
    ]
-  },
-  {
-   "id": "tree-ne-corner",
-   "type": "plant-tree",
-   "position": [
-    1.0,
-    0,
-    -3.35
-   ],
-   "variant": "medium"
-  },
-  {
-   "id": "planter-east-windows",
-   "type": "planter-box",
-   "position": [
-    1.28,
-    0,
-    0.0
-   ],
-   "rotation": 90,
-   "size": [
-    1.4,
-    0.45,
-    0.3
-   ]
-  },
-  {
-   "id": "desk-plant-north",
-   "type": "plant-shrub",
-   "position": [
-    -1.6,
-    0.74,
-    -2.35
-   ],
-   "variant": "small"
-  },
-  {
-   "id": "desk-plant-south",
-   "type": "plant-shrub",
-   "position": [
-    -1.8,
-    0.74,
-    2.2
-   ],
-   "variant": "small"
   }
  ]
 }
