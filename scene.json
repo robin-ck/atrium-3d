@@ -1,195 +1,465 @@
 {
-  "meta": {
-    "name": "Office room (scan)",
-    "units": "metres",
-    "axes": "x = west(-) to east(+), y = up, z = north(-) to south(+). Origin = floor centre of the room. Window wall on the east side at x = +1.5 and at the north end.",
-    "notes": "Edit only the 'objects' list to change the scene. See AI-EDITING.md. The previous stylised atrium is kept in scene-atrium.json."
-  },
-  "base": {
-    "type": "scan",
-    "model": "office.glb.b64.txt",
-    "scale": 1,
-    "offset": [
-      0,
-      0,
-      0
-    ],
-    "rotation": 0,
-    "clipHeight": 2.3,
-    "orbitStart": {
-      "position": [
-        5.5,
-        7.5,
-        7.5
-      ],
-      "target": [
-        0,
-        0.6,
-        0
-      ]
-    },
-    "walkStart": {
-      "position": [
-        1.15,
-        1.6,
-        3.2
-      ],
-      "yaw": 0
-    },
-    "walkBounds": {
-      "x": [
-        -1.7,
-        1.35
-      ],
-      "z": [
-        -3.6,
-        3.6
-      ]
-    }
-  },
-  "zones": [
-    {
-      "id": "desks-north",
-      "label": "Desk row (north)",
-      "x": [
-        -1.8,
-        1.15
-      ],
-      "z": [
-        -2.6,
-        -0.8
-      ]
-    },
-    {
-      "id": "desks-south",
-      "label": "Desk row (south)",
-      "x": [
-        -2.0,
-        1.15
-      ],
-      "z": [
-        0.3,
-        2.1
-      ]
-    },
-    {
-      "id": "middle-aisle",
-      "label": "Aisle between desk rows",
-      "x": [
-        -1.8,
-        1.1
-      ],
-      "z": [
-        -0.75,
-        0.25
-      ]
-    },
-    {
-      "id": "east-aisle",
-      "label": "Aisle along windows",
-      "x": [
-        1.15,
-        1.45
-      ],
-      "z": [
-        -3.4,
-        3.4
-      ]
-    },
-    {
-      "id": "east-windows",
-      "label": "Window wall (east), x = 1.5",
-      "x": [
-        1.45,
-        1.6
-      ],
-      "z": [
-        -3.9,
-        3.9
-      ]
-    },
-    {
-      "id": "north-end",
-      "label": "Open floor, north end",
-      "x": [
-        -1.9,
-        1.45
-      ],
-      "z": [
-        -3.9,
-        -2.7
-      ]
-    },
-    {
-      "id": "south-end",
-      "label": "Open floor, south end",
-      "x": [
-        -1.9,
-        1.45
-      ],
-      "z": [
-        2.2,
-        3.9
-      ]
-    },
-    {
-      "id": "west-wall",
-      "label": "West wall",
-      "x": [
-        -2.0,
-        -1.85
-      ],
-      "z": [
-        -3.9,
-        3.9
-      ]
-    }
+ "meta": {
+  "name": "Office room",
+  "units": "metres",
+  "axes": "x = west(-) to east(+), y = up, z = north(-) to south(+). Origin = floor centre. Window walls on the east (x = 1.5) and north (z = -3.9) sides.",
+  "notes": "Stylised model with dimensions from the KIRI scan. Edit 'objects' (and 'base' for walls/size). The photo scan version is scene-office-scan.json; the atrium is scene-atrium.json."
+ },
+ "base": {
+  "type": "room",
+  "x": [
+   -2.0,
+   1.5
   ],
-  "objects": [
-    {
-      "id": "tree-ne-corner",
-      "type": "plant-tree",
-      "position": [
-        1.0,
-        0,
-        -3.2
-      ],
-      "variant": "medium"
-    },
-    {
-      "id": "planter-east-windows",
-      "type": "planter-box",
-      "position": [
-        1.3,
-        0,
-        0.3
-      ],
-      "rotation": 90,
-      "size": [
-        1.6,
-        0.45,
-        0.3
-      ]
-    },
-    {
-      "id": "desk-plant-north",
-      "type": "plant-shrub",
-      "position": [
-        -1.0,
-        0.74,
-        -1.9
-      ],
-      "variant": "small"
-    },
-    {
-      "id": "desk-plant-south",
-      "type": "plant-shrub",
-      "position": [
-        -1.1,
-        0.74,
-        1.2
-      ],
-      "variant": "small"
-    }
-  ]
+  "z": [
+   -3.9,
+   3.7
+  ],
+  "height": 2.7,
+  "walls": [
+   {
+    "side": "north",
+    "kind": "window"
+   },
+   {
+    "side": "east",
+    "kind": "window"
+   },
+   {
+    "side": "south",
+    "kind": "solid"
+   },
+   {
+    "side": "west",
+    "kind": "solid"
+   }
+  ],
+  "walkStart": {
+   "position": [
+    1.1,
+    1.6,
+    3.2
+   ],
+   "yaw": 0
+  }
+ },
+ "zones": [
+  {
+   "id": "desks-north",
+   "label": "Desk row (north)",
+   "x": [
+    -1.75,
+    1.05
+   ],
+   "z": [
+    -2.5,
+    -0.9
+   ]
+  },
+  {
+   "id": "desks-south",
+   "label": "Desk row (south)",
+   "x": [
+    -1.95,
+    0.85
+   ],
+   "z": [
+    0.8,
+    2.4
+   ]
+  },
+  {
+   "id": "middle-aisle",
+   "label": "Aisle between desk rows",
+   "x": [
+    -1.9,
+    1.05
+   ],
+   "z": [
+    -0.55,
+    0.45
+   ]
+  },
+  {
+   "id": "east-aisle",
+   "label": "Aisle along east windows",
+   "x": [
+    1.05,
+    1.45
+   ],
+   "z": [
+    -3.4,
+    3.4
+   ]
+  },
+  {
+   "id": "east-windows",
+   "label": "East window wall, x = 1.5",
+   "x": [
+    1.4,
+    1.5
+   ],
+   "z": [
+    -3.9,
+    3.7
+   ]
+  },
+  {
+   "id": "north-end",
+   "label": "Open floor at north windows",
+   "x": [
+    -1.95,
+    1.45
+   ],
+   "z": [
+    -3.85,
+    -3.0
+   ]
+  },
+  {
+   "id": "south-end",
+   "label": "Open floor, south end",
+   "x": [
+    -1.95,
+    1.45
+   ],
+   "z": [
+    2.95,
+    3.65
+   ]
+  },
+  {
+   "id": "west-wall",
+   "label": "West wall",
+   "x": [
+    -2.0,
+    -1.9
+   ],
+   "z": [
+    -3.9,
+    3.7
+   ]
+  }
+ ],
+ "objects": [
+  {
+   "id": "divider-north",
+   "type": "desk-divider",
+   "position": [
+    -0.35,
+    0,
+    -1.7
+   ],
+   "size": [
+    2.8,
+    1.25,
+    0.04
+   ]
+  },
+  {
+   "id": "desk-north-n1",
+   "type": "desk",
+   "position": [
+    -1.05,
+    0,
+    -2.1
+   ]
+  },
+  {
+   "id": "monitor-north-n1",
+   "type": "monitor",
+   "position": [
+    -1.05,
+    0.74,
+    -1.88
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-north-n1",
+   "type": "office-chair",
+   "position": [
+    -1.05,
+    0,
+    -2.76
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-north-s1",
+   "type": "desk",
+   "position": [
+    -1.05,
+    0,
+    -1.3
+   ]
+  },
+  {
+   "id": "monitor-north-s1",
+   "type": "monitor",
+   "position": [
+    -1.05,
+    0.74,
+    -1.52
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-north-s1",
+   "type": "office-chair",
+   "position": [
+    -1.05,
+    0,
+    -0.64
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "desk-north-n2",
+   "type": "desk",
+   "position": [
+    0.35,
+    0,
+    -2.1
+   ]
+  },
+  {
+   "id": "monitor-north-n2",
+   "type": "monitor",
+   "position": [
+    0.35,
+    0.74,
+    -1.88
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-north-n2",
+   "type": "office-chair",
+   "position": [
+    0.35,
+    0,
+    -2.76
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-north-s2",
+   "type": "desk",
+   "position": [
+    0.35,
+    0,
+    -1.3
+   ]
+  },
+  {
+   "id": "monitor-north-s2",
+   "type": "monitor",
+   "position": [
+    0.35,
+    0.74,
+    -1.52
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-north-s2",
+   "type": "office-chair",
+   "position": [
+    0.35,
+    0,
+    -0.64
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "divider-south",
+   "type": "desk-divider",
+   "position": [
+    -0.55,
+    0,
+    1.6
+   ],
+   "size": [
+    2.8,
+    1.25,
+    0.04
+   ]
+  },
+  {
+   "id": "desk-south-n1",
+   "type": "desk",
+   "position": [
+    -1.25,
+    0,
+    1.2
+   ]
+  },
+  {
+   "id": "monitor-south-n1",
+   "type": "monitor",
+   "position": [
+    -1.25,
+    0.74,
+    1.42
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-south-n1",
+   "type": "office-chair",
+   "position": [
+    -1.25,
+    0,
+    0.54
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-south-s1",
+   "type": "desk",
+   "position": [
+    -1.25,
+    0,
+    2.0
+   ]
+  },
+  {
+   "id": "monitor-south-s1",
+   "type": "monitor",
+   "position": [
+    -1.25,
+    0.74,
+    1.78
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-south-s1",
+   "type": "office-chair",
+   "position": [
+    -1.25,
+    0,
+    2.66
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "desk-south-n2",
+   "type": "desk",
+   "position": [
+    0.15,
+    0,
+    1.2
+   ]
+  },
+  {
+   "id": "monitor-south-n2",
+   "type": "monitor",
+   "position": [
+    0.15,
+    0.74,
+    1.42
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "chair-south-n2",
+   "type": "office-chair",
+   "position": [
+    0.15,
+    0,
+    0.54
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "desk-south-s2",
+   "type": "desk",
+   "position": [
+    0.15,
+    0,
+    2.0
+   ]
+  },
+  {
+   "id": "monitor-south-s2",
+   "type": "monitor",
+   "position": [
+    0.15,
+    0.74,
+    1.78
+   ],
+   "rotation": 0
+  },
+  {
+   "id": "chair-south-s2",
+   "type": "office-chair",
+   "position": [
+    0.15,
+    0,
+    2.66
+   ],
+   "rotation": 180
+  },
+  {
+   "id": "whiteboard-south",
+   "type": "whiteboard",
+   "position": [
+    -0.4,
+    0.9,
+    3.68
+   ],
+   "rotation": 180,
+   "size": [
+    1.8,
+    1.1
+   ]
+  },
+  {
+   "id": "tree-ne-corner",
+   "type": "plant-tree",
+   "position": [
+    1.0,
+    0,
+    -3.35
+   ],
+   "variant": "medium"
+  },
+  {
+   "id": "planter-east-windows",
+   "type": "planter-box",
+   "position": [
+    1.28,
+    0,
+    0.0
+   ],
+   "rotation": 90,
+   "size": [
+    1.4,
+    0.45,
+    0.3
+   ]
+  },
+  {
+   "id": "desk-plant-north",
+   "type": "plant-shrub",
+   "position": [
+    -1.6,
+    0.74,
+    -2.35
+   ],
+   "variant": "small"
+  },
+  {
+   "id": "desk-plant-south",
+   "type": "plant-shrub",
+   "position": [
+    -1.8,
+    0.74,
+    2.2
+   ],
+   "variant": "small"
+  }
+ ]
 }

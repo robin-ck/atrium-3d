@@ -1,32 +1,53 @@
 # Editing the room with AI
 
-The 3D page (`index.html`) loads `scene.json`. That file now uses a **3D scan of the office room** (`office.glb`, published as base64 text in `office.glb.b64.txt` because artifacts cannot serve .glb files) as the base, and every plant or piece of furniture added on top comes from its `objects` list. To change the scene, ask Claude to edit **only the `objects` list in `scene.json`**, then republish the artifact.
+The 3D page (`index.html`) loads `scene.json`. That file describes the room (`base`) and every plant or piece of furniture in it (`objects`). To change the scene, ask Claude to edit **only `scene.json`** (usually its `objects` list), then republish the artifact.
 
-The earlier stylised atrium is kept in `scene-atrium.json`. Copying it over `scene.json` brings the atrium back.
 
 ## Office room (scene.json)
 
-- Units are metres, `y` is up, and the floor is at `y = 0`. The ceiling is at about `y = 2.7`, and desk tops are at `y = 0.74`.
-- `x` runs from about -2.0 (west wall) to +1.5 (east window wall). `z` runs from about -3.9 (north end, also glazed) to +3.9 (south wall).
-- Walk mode starts at the south end and looks north.
-- In orbit mode the ceiling is cut off at `base.clipHeight` (2.3 m) so you can look in from above.
-- The scale was estimated (scan units × 1.95, from desk height and ceiling). If things look too big or small, change `base.scale` (e.g. 1.05).
+`scene.json` is a stylised model of the office, with dimensions taken from the photo scan. The scan itself is kept in `scene-office-scan.json`, and the atrium in `scene-atrium.json`; copy either over `scene.json` to switch back.
+
+- Units are metres, `y` is up, and the floor is at `y = 0`. The ceiling is at `y = 2.7`, and desk tops are at `y = 0.74`.
+- `x` runs from -2.0 (west wall) to 1.5 (east window wall). `z` runs from -3.9 (north window wall) to 3.7 (south wall).
+- Walk mode starts at the south-east corner and looks north.
+
+### Room block
+
+```json
+"base": { "type": "room", "x": [-2.0, 1.5], "z": [-3.9, 3.7], "height": 2.7,
+  "walls": [ { "side": "north", "kind": "window" }, { "side": "east", "kind": "window", "from": -3.9, "to": 0, "sill": 0.8 } ] }
+```
+
+Each wall side (`north`, `east`, `south`, `west`) is solid unless a `window` segment covers it. `from`/`to` are x values for north/south and z values for east/west. `sill` is the parapet height under the glass.
+
+### Zones
 
 | zone id | x range | z range | notes |
 |---|---|---|---|
-| desks-north | -1.8 to 1.15 | -2.6 to -0.8 | desk row; desk plants go at y = 0.74 |
-| desks-south | -2.0 to 1.15 | 0.3 to 2.1 | desk row; desk plants go at y = 0.74 |
-| middle-aisle | -1.8 to 1.1 | -0.75 to 0.25 | keep clear |
-| east-aisle | 1.15 to 1.45 | -3.4 to 3.4 | narrow, keep mostly clear |
-| east-windows | 1.45 to 1.6 | -3.9 to 3.9 | glass wall; low planters can stand just in front |
-| north-end | -1.9 to 1.45 | -3.9 to -2.7 | open floor, glazed end; good for large plants |
-| south-end | -1.9 to 1.45 | 2.2 to 3.9 | open floor |
-| west-wall | -2.0 to -1.85 | -3.9 to 3.9 | solid wall; green walls face east, so `rotation: 90` |
+| desks-north | -1.75 to 1.05 | -2.5 to -0.9 | 4 desks, divider at z = -1.7; desk plants at y = 0.74 |
+| desks-south | -1.95 to 0.85 | 0.8 to 2.4 | 4 desks, divider at z = 1.6; desk plants at y = 0.74 |
+| middle-aisle | -1.9 to 1.05 | -0.55 to 0.45 | keep clear |
+| east-aisle | 1.05 to 1.45 | -3.4 to 3.4 | narrow, keep mostly clear |
+| east-windows | 1.4 to 1.5 | -3.9 to 3.7 | glass wall, sill at 0.8 m |
+| north-end | -1.95 to 1.45 | -3.85 to -3.0 | open floor at the windows; good for large plants |
+| south-end | -1.95 to 1.45 | 2.95 to 3.65 | open floor; whiteboard on the south wall |
+| west-wall | -2.0 to -1.9 | -3.9 to 3.7 | solid wall; green walls face east, so `rotation: 90` |
+
+### Office furniture types
+
+| type | notes |
+|---|---|
+| `desk` | position = floor centre, `size` [w, h, d] default [1.4, 0.74, 0.8] |
+| `desk-divider` | position = floor centre, `size` [length, top height, thickness] |
+| `monitor` | position on the desk top (y = 0.74); screen faces +z, use `rotation: 180` to face -z |
+| `office-chair` | faces +z; `rotation: 180` faces -z; `color` sets the upholstery |
+| `whiteboard` | position = bottom centre of the board; faces +z; `size` [w, h] |
 
 Office example prompts:
 - "Put three large trees in the north end and a planter box along the south wall."
 - "Add a small plant on every desk."
 - "Cover the west wall with a green wall from z = -3 to z = 3, 2 m high."
+- "Make the west wall a window wall too."
 
 # Atrium (scene-atrium.json)
 
